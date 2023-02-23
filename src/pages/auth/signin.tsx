@@ -2,7 +2,7 @@ import { type NextPage } from "next";
 import { signIn } from "next-auth/react";
 import Head from "next/head";
 
-const Login: NextPage = () => {
+const SignIn: NextPage = () => {
   return (
     <>
       <Head>
@@ -25,4 +25,4 @@ const Login: NextPage = () => {
   );
 };
 
-export default Login;
+export default SignIn;
