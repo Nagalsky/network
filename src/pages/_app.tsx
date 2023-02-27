@@ -6,26 +6,18 @@ import { api } from "../utils/api";
 
 import RootLayout from "@/layouts/RootLayout";
 import { ThemeProvider } from "next-themes";
-import { useRouter } from "next/router";
 import "../styles/globals.css";
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
   pageProps: { session, ...pageProps },
 }) => {
-  const router = useRouter();
-  const { pathname } = router;
-
   return (
     <ThemeProvider enableSystem={true} attribute="class">
       <SessionProvider session={session}>
-        {pathname === "/auth/signin" ? (
+        <RootLayout>
           <Component {...pageProps} />
-        ) : (
-          <RootLayout>
-            <Component {...pageProps} />
-          </RootLayout>
-        )}
+        </RootLayout>
       </SessionProvider>
     </ThemeProvider>
   );

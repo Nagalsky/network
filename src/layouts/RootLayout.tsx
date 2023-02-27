@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import { useSession } from "next-auth/react";
 import { type FC, type ReactNode } from "react";
 
 interface RootLayoutProps {
@@ -6,9 +7,10 @@ interface RootLayoutProps {
 }
 
 const RootLayout: FC<RootLayoutProps> = ({ children }) => {
+  const { data: session } = useSession();
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      {session ? <Header /> : null}
 
       <main className="flex-grow">{children}</main>
     </div>

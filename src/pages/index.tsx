@@ -1,8 +1,31 @@
+import { api } from "@/utils/api";
 import { type GetServerSideProps, type NextPage } from "next";
-import { getSession } from "next-auth/react";
+import { getSession, useSession } from "next-auth/react";
 import Head from "next/head";
+import { useState } from "react";
 
 const Home: NextPage = () => {
+  const { data: guestbookEntries, isLoading } = api.guestbook.getAll.useQuery();
+  const { data: session } = useSession();
+  const [message, setMessage] = useState("");
+
+  const utils = api.useContext();
+  const postMessage = api.guestbook.postMessage.useMutation({
+    onMutate: async (newEntry) => {
+      await utils.guestbook.getAll.cancel();
+      utils.guestbook.getAll.setData(undefined, (prevEntries) => {
+        if (prevEntries) {
+          return [newEntry, ...prevEntries];
+        } else {
+          return [newEntry];
+        }
+      });
+    },
+    onSettled: async () => {
+      await utils.guestbook.getAll.invalidate();
+    },
+  });
+
   return (
     <>
       <Head>
@@ -12,7 +35,52 @@ const Home: NextPage = () => {
       </Head>
 
       <section className="py-10">
-        <div className="container">IM a homepage</div>
+        <div className="container">
+          <h1 className="mb-5">IM a homepage</h1>
+
+          {isLoading ? (
+            <h2>Loading...</h2>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {guestbookEntries?.map((entry, index) => {
+                return (
+                  <div key={index}>
+                    <p>{entry.message}</p>
+                    <span>- {entry.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <form
+            className="mt-6 flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              postMessage.mutate({
+                name: session?.user?.name as string,
+                message,
+              });
+              setMessage("");
+            }}
+          >
+            <input
+              type="text"
+              className="rounded-md border-2 border-zinc-800 bg-neutral-900 px-4 py-2 focus:outline-none"
+              placeholder="Your message..."
+              minLength={2}
+              maxLength={100}
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+            />
+            <button
+              type="submit"
+              className="rounded-md border-2 border-zinc-800 p-2 focus:outline-none"
+            >
+              Submit
+            </button>
+          </form>
+        </div>
       </section>
     </>
   );
