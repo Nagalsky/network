@@ -2,29 +2,47 @@ import { api } from "@/utils/api";
 import { type GetServerSideProps, type NextPage } from "next";
 import { getSession, useSession } from "next-auth/react";
 import Head from "next/head";
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 
 const Home: NextPage = () => {
-  const { data: guestbookEntries, isLoading } = api.guestbook.getAll.useQuery();
+  const {
+    data: chat,
+    isLoading,
+    isFetching,
+    isInitialLoading,
+  } = api.chat.getAll.useQuery();
   const { data: session } = useSession();
   const [message, setMessage] = useState("");
+  const container = useRef<HTMLDivElement>(null);
 
   const utils = api.useContext();
-  const postMessage = api.guestbook.postMessage.useMutation({
+  const postMessage = api.chat.postMessage.useMutation({
     onMutate: async (newEntry) => {
-      await utils.guestbook.getAll.cancel();
-      utils.guestbook.getAll.setData(undefined, (prevEntries) => {
+      await utils.chat.getAll.cancel();
+      utils.chat.getAll.setData(undefined, (prevEntries) => {
         if (prevEntries) {
-          return [newEntry, ...prevEntries];
+          return [...prevEntries, newEntry];
         } else {
           return [newEntry];
         }
       });
     },
     onSettled: async () => {
-      await utils.guestbook.getAll.invalidate();
+      await utils.chat.getAll.invalidate();
     },
   });
+
+  useEffect(() => {
+    if (container && container.current) {
+      const element = container.current;
+      element.scroll({
+        top: element.scrollHeight,
+        left: 0,
+        behavior: "smooth",
+      });
+    }
+  }, [container, chat]);
 
   return (
     <>
@@ -34,7 +52,7 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <section className="py-10">
+      <section className="h-[600px] overflow-y-auto py-10" ref={container}>
         <div className="container">
           <h1 className="mb-5">IM a homepage</h1>
 
@@ -42,11 +60,32 @@ const Home: NextPage = () => {
             <h2>Loading...</h2>
           ) : (
             <div className="flex flex-col gap-4">
-              {guestbookEntries?.map((entry, index) => {
+              {chat?.map((entry, index) => {
                 return (
-                  <div key={index}>
-                    <p>{entry.message}</p>
-                    <span>- {entry.name}</span>
+                  <div
+                    key={index}
+                    className={`${
+                      entry.name === session?.user?.name
+                        ? "chat-end"
+                        : "chat-start"
+                    } chat`}
+                  >
+                    <div className="chat-image avatar">
+                      <div className="w-10 rounded-full">
+                        <Image
+                          src={session?.user?.image || ""}
+                          width={20}
+                          height={20}
+                          alt="Avatar"
+                          className="h-10 w-10"
+                          priority
+                        />
+                      </div>
+                    </div>
+                    <div className="chat-bubble">
+                      <p>{entry.message}</p>
+                      <span>- {entry.name}</span>
+                    </div>
                   </div>
                 );
               })}

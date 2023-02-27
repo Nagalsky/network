@@ -1,16 +1,16 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
-export const guestbookRouter = createTRPCRouter({
+export const chatRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     try {
-      return await ctx.prisma.guestbook.findMany({
+      return await ctx.prisma.chat.findMany({
         select: {
           name: true,
           message: true,
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
       });
     } catch (error) {
@@ -21,7 +21,7 @@ export const guestbookRouter = createTRPCRouter({
     .input(z.object({ name: z.string(), message: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.prisma.guestbook.create({
+        await ctx.prisma.chat.create({
           data: {
             name: input.name,
             message: input.message,
